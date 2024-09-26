@@ -1,0 +1,552 @@
+<html lang="en">
+
+</html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <title>Addresses Pins Heat Map</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <script src="https://js.arcgis.com/4.30/"></script>
+
+  <script>
+    require([
+      "esri/config",
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/widgets/Legend",
+      "esri/core/reactiveUtils",
+      "esri/layers/CSVLayer",
+      "esri/widgets/LayerList",
+      "esri/widgets/Expand",
+      "esri/widgets/ScaleBar",
+      "esri/widgets/Search",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/Fullscreen",
+      "esri/widgets/Home",
+      "esri/widgets/BasemapToggle",
+      "esri/layers/GeoJSONLayer",
+      "esri/renderers/ClassBreaksRenderer"
+    ], (esriConfig, Map, MapView, Legend, reactiveUtils, CSVLayer, LayerList, Expand, ScaleBar, Search, BasemapGallery, Fullscreen, Home, BasemapToggle, GeoJSONLayer, ClassBreaksRenderer) => {
+
+
+      esriConfig.apiKey = "AAPKe96926c67dfd4afb80185e0a1020deafnvFzsj9yYBaj80DS9MWNWPGhkV_K-kXKNIkOzspRqvQ4fQkbcRrhPVfkFafbB1zt";
+
+
+
+      const url = "https://raw.githubusercontent.com/ashrafayman219/LimitMapVeiw/refs/heads/main/A%20-%20Copy.csv";
+      const urlA = "https://raw.githubusercontent.com/ashrafayman219/LimitMapVeiw/refs/heads/main/A.csv";
+      const urlB = "https://raw.githubusercontent.com/ashrafayman219/LimitMapVeiw/refs/heads/main/B.csv";
+      const urlC = "https://raw.githubusercontent.com/ashrafayman219/LimitMapVeiw/refs/heads/main/C.csv";
+      const neighborhoodsgeojsonurl = "https://raw.githubusercontent.com/ashrafayman219/LimitMapVeiw/refs/heads/main/PinsGeoJSON.json";
+
+
+
+      const renderer = {
+        type: "heatmap",
+        colorStops: [
+          { color: [133, 193, 200, 0], ratio: 0 },
+          { color: [133, 193, 200, 0], ratio: 0.01 },
+          { color: [133, 193, 200, 255], ratio: 0.01 },
+          { color: [133, 193, 200, 255], ratio: 0.01 },
+          { color: [144, 161, 190, 255], ratio: 0.0925 },
+          { color: [156, 129, 132, 255], ratio: 0.175 },
+          { color: [167, 97, 170, 255], ratio: 0.2575 },
+          { color: [175, 73, 128, 255], ratio: 0.34 },
+          { color: [184, 48, 85, 255], ratio: 0.4225 },
+          { color: [192, 24, 42, 255], ratio: 0.505 },
+          { color: [200, 0, 0, 255], ratio: 0.5875 },
+          { color: [211, 51, 0, 255], ratio: 0.67 },
+          { color: [222, 102, 0, 255], ratio: 0.7525 },
+          { color: [233, 153, 0, 255], ratio: 0.835 },
+          { color: [244, 204, 0, 255], ratio: 0.9175 },
+          { color: [255, 255, 0, 255], ratio: 1 },
+        ],
+        maxDensity: 0.01,
+        minDensity: 0,
+      };
+
+
+      const less35 = {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: "#fffcd4",
+          style: "solid",
+          outline: {
+            width: 0.2,
+            color: [140, 81, 10, 0.5]
+          }
+        };
+
+        const less35000 = {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: "#8C510A",
+          style: "solid",
+          outline: {
+            width: 0.2,
+            color: [255, 252, 212, 0.5]
+          }
+        };
+
+        const less50 = {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: "#b1cdc2",
+          style: "solid",
+          outline: {
+            width: 0.2,
+            color: [255, 255, 255, 0.5]
+          }
+        };
+
+        const more50 = {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: "#38627a",
+          style: "solid",
+          outline: {
+            width: 0.2,
+            color: [255, 255, 255, 0.5]
+          }
+        };
+
+        const more75 = {
+          type: "simple-fill", // autocasts as new SimpleFillSymbol()
+          color: "#0d2644",
+          style: "solid",
+          outline: {
+            width: 0.2,
+            color: [255, 255, 255, 0.5]
+          }
+        };
+
+
+      const renderer00 = {
+          type: "class-breaks", // autocasts as new ClassBreaksRenderer()
+          field: "Point_Count",
+          // normalizationField: "EDUCBASECY",
+          legendOptions: {
+            title: "The amount of pins at each neighborhood"
+          },
+          defaultSymbol: {
+            type: "simple-fill", // autocasts as new SimpleFillSymbol()
+            color: "black",
+            style: "backward-diagonal",
+            outline: {
+              width: 0.5,
+              color: [50, 50, 50, 0.6]
+            }
+          },
+          defaultLabel: "no pins",
+          classBreakInfos: [
+            {
+              minValue: 0,
+              maxValue: 5,
+              symbol: less35000,
+              label: "0 - 5 Pins"
+            },
+            {
+              minValue: 6,
+              maxValue: 21,
+              symbol: less35,
+              label: "6 - 21 Pins"
+            },
+            {
+              minValue: 22,
+              maxValue: 77,
+              symbol: less50,
+              label: "22 - 77 Pins"
+            },
+            {
+              minValue: 78,
+              maxValue: 153,
+              symbol: more50,
+              label: "78 - 153 Pins"
+            },
+            {
+              minValue: 154,
+              maxValue: 267,
+              symbol: more75,
+              label: "154 - 267 Pins"
+            }
+          ]
+        };
+
+
+      const layer = new GeoJSONLayer({
+        url: neighborhoodsgeojsonurl,
+        title: "NYC Neighborhoods",
+        renderer: renderer00,
+        popupTemplate: {
+          title: "{NTAName}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: "NTAAbbrev",
+                  label: "Neighborhood Name Abbr",
+                },
+                {
+                  fieldName: "Point_Count",
+                  label: "Amount of Pins",
+                },
+                {
+                  fieldName: "Shape_Length",
+                  label: "Shape Length",
+                },
+                {
+                  fieldName: "Shape_Area",
+                  label: "Shape Area",
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      const layer01 = new CSVLayer({
+        url: url,
+        title: "All Pins Types",
+        popupTemplate: {
+          title: "Type: {Type}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: "Type",
+                  label: "Type",
+                },
+                {
+                  fieldName: "X",
+                  label: "X",
+                },
+                {
+                  fieldName: "Y",
+                  label: "Y",
+                },
+              ],
+            },
+          ],
+        },
+        renderer: renderer,
+        labelsVisible: true,
+      });
+
+      const layerA = new CSVLayer({
+        url: urlA,
+        title: "Pins with type A",
+        popupTemplate: {
+          title: "Type: {Type}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: "Type",
+                  label: "Type",
+                },
+                {
+                  fieldName: "Coordinates",
+                  label: "Coordinates",
+                },
+                {
+                  fieldName: "X",
+                  label: "X",
+                },
+                {
+                  fieldName: "Y",
+                  label: "Y",
+                },
+              ],
+            },
+          ],
+        },
+        renderer: renderer,
+        labelsVisible: true,
+      });
+
+      const layerB = new CSVLayer({
+        url: urlB,
+        title: "Pins with type B",
+        popupTemplate: {
+          title: "Type: {Type}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: "Type",
+                  label: "Type",
+                },
+                {
+                  fieldName: "Coordinates",
+                  label: "Coordinates",
+                },
+                {
+                  fieldName: "X",
+                  label: "X",
+                },
+                {
+                  fieldName: "Y",
+                  label: "Y",
+                },
+              ],
+            },
+          ],
+        },
+        renderer: renderer,
+        labelsVisible: true,
+      });
+
+      const layerC = new CSVLayer({
+        url: urlC,
+        title: "Pins with type C",
+        popupTemplate: {
+          title: "Type: {Type}",
+          content: [
+            {
+              type: "fields",
+              fieldInfos: [
+                {
+                  fieldName: "Type",
+                  label: "Type",
+                },
+                {
+                  fieldName: "Coordinates",
+                  label: "Coordinates",
+                },
+                {
+                  fieldName: "X",
+                  label: "X",
+                },
+                {
+                  fieldName: "Y",
+                  label: "Y",
+                },
+              ],
+            },
+          ],
+        },
+        renderer: renderer,
+        labelsVisible: true,
+      });
+
+
+      layerA.visible = false;
+      layerB.visible = false;
+      layerC.visible = false;
+      const map = new Map({
+        basemap: "gray-vector",
+        layers: [layerC, layerB, layerA, layer01, layer]
+        // layers: [layer01, layer02, layer03]
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        center: [-119.417931, 36.778259], // lat and long for CA
+        zoom: 6,
+        map: map
+      });
+
+      view.ui.add(
+        new Legend({
+          view: view
+        }),
+        "bottom-left"
+      );
+
+
+      view.whenLayerView(layer01).then(function (layerView) {
+        view.goTo(
+          {
+            target: layer01.fullExtent,
+          },
+          {
+            duration: 2000,
+          }
+        );
+      })
+
+      view.when().then(() => {
+        // When the view is ready, clone the heatmap renderer
+        // from the only layer in the web map
+
+        for (let i = 0; i < view.map.layers.length; i++) {
+          const layer = view.map.layers.getItemAt(i);
+          const heatmapRenderer = layer.renderer.clone();
+
+          // The following simple renderer will render all points as simple
+          // markers at certain scales
+          const simpleRenderer = {
+            type: "simple",
+            symbol: {
+              type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
+              url: "https://daraobeirne.github.io/kisspng-drawing-pin-world-map-logo-push-vector-5ae029f6ddeaf4.198342921524640246909.png",
+              width: "30px",
+              height: "30px"
+            }
+          };
+
+          // When the scale is larger than 1:72,224 (zoomed in passed that scale),
+          // then switch from a heatmap renderer to a simple renderer. When zoomed
+          // out beyond that scale, switch back to the heatmap renderer
+          reactiveUtils.watch(
+            () => view.scale,
+            (scale) => {
+              if (layer.title === "NYC Neighborhoods") {
+                layer.renderer = renderer00
+              } else {
+                layer.renderer = scale <= 72224 ? simpleRenderer : heatmapRenderer;
+              }
+            }
+          );
+        }
+
+      });
+
+
+      var basemapGallery = new BasemapGallery({
+        view: view,
+      });
+
+      var Expand22 = new Expand({
+        view: view,
+        content: basemapGallery,
+        expandIcon: "basemap",
+        group: "top-right",
+        // expanded: false,
+        expandTooltip: "Open Basmap Gallery",
+        collapseTooltip: "Close",
+      });
+      view.ui.add([Expand22], { position: "top-right", index: 6 });
+
+      var fullscreen = new Fullscreen({
+        view: view,
+      });
+      view.ui.add(fullscreen, "top-right");
+
+
+
+      var scalebar = new ScaleBar({
+        view: view,
+        unit: "metric",
+      });
+      view.ui.add(scalebar, "bottom-right");
+
+      var search = new Search({
+        //Add Search widget
+        view: view,
+      });
+      view.ui.add(search, { position: "top-left", index: 0 }); //Add to the map
+
+      var homeWidget = new Home({
+        view: view,
+      });
+      view.ui.add(homeWidget, "top-left");
+
+      let basemapToggle = new BasemapToggle({
+        view: view,  // The view that provides access to the map's "streets-vector" basemap
+        nextBasemap: "hybrid"  // Allows for toggling to the "hybrid" basemap
+      });
+      view.ui.add(basemapToggle, "top-left");
+
+      var layerList = new LayerList({
+        view: view,
+        listItemCreatedFunction: function (event) {
+          var item = event.item;
+          // displays the legend for each layer list item
+          item.panel = {
+            content: "legend",
+          };
+        },
+        showLegend: true,
+      });
+
+      layerList.visibilityAppearance = "checkbox";
+      var Expand5 = new Expand({
+        view: view,
+        content: layerList,
+        expandIcon: "layers",
+        group: "top-right",
+        // expanded: false,
+        expandTooltip: "Layer List",
+        collapseTooltip: "Close",
+      });
+      Expand5.expanded = true;
+      view.ui.add([Expand5], { position: "top-left", index: 6 });
+
+
+
+      // const map = new Map({
+      //   portalItem: {
+      //     id: "559f46c1162d4a09901438d92148e53a"
+      //   }
+      // });
+
+      // const view = new MapView({
+      //   container: "viewDiv",
+      //   map: map,
+      //   constraints: {
+      //     minScale: 1155582
+      //   }
+      // });
+
+      // view.ui.add(
+      //   new Legend({
+      //     view: view
+      //   }),
+      //   "bottom-left"
+      // );
+
+
+
+
+
+      // // Displays instructions to the user for understanding the sample
+      // // And places them in an Expand widget instance
+      // const sampleInstructions = document.createElement("div");
+      // sampleInstructions.style.padding = "10px";
+      // sampleInstructions.style.backgroundColor = "white";
+      // sampleInstructions.style.width = "300px";
+      // sampleInstructions.innerText = [
+      //   "As you zoom in, the style will switch from a",
+      //   "heatmap to individual points."
+      // ].join(" ");
+
+      // const instructionsExpand = new Expand({
+      //   expandIcon: "question",
+      //   expandTooltip: "How to use this sample",
+      //   expanded: true,
+      //   view: view,
+      //   content: sampleInstructions
+      // });
+      // view.ui.add(instructionsExpand, "top-left");
+
+      // // Hide the instructions when the user starts interacting with the sample
+      // reactiveUtils
+      //   .whenOnce(() => view.interacting)
+      //   .then(() => {
+      //     instructionsExpand.expanded = false;
+      //   });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>
